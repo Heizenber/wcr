@@ -51,25 +51,44 @@ pub fn count(mut file: impl BufRead) -> MyResult<FileInfo> {
 }
 
 pub fn run(config: Config) -> MyResult<()> {
-    let number_of_files = &config.files.len();
-    let last_filename = &config.files[*number_of_files - 1];
+    let mut total = FileInfo::default();
     for filename in &config.files {
-        let mut total = FileInfo::default();
         match open(filename) {
             Err(err) => eprintln!("{}: {}", filename, err),
             Ok(mut file) => {
                 if let Ok(info) = count(file) {
                     println!(
-                        "{:>8}{:>8}{:>8} {}",
-                        info.num_lines,
-                        info.num_words,
-                        info.num_bytes,
-                        filename
+                        "{}{}{}{}{}",
+                        format_field(info.num_lines, config.lines),
+                        format_field(info.num_words, config.words),
+                        format_field(info.num_bytes, config.bytes),
+                        format_field(info.num_chars, config.chars),
+                        if filename == "-" {
+                            "".to_string()
+                        } else {
+                            format!(" {}", filename)
+                        }
                     );
+                    total.num_words += info.num_words;
+                    total.num_bytes += info.num_bytes;
+                    total.num_chars += info.num_chars;
+                    total.num_lines += info.num_lines;
+
                 }
             }
         }
     }
+
+    if config.files.len() > 1 {
+        println!(
+            "{}{}{}{} total",
+            format_field(total.num_lines, config.lines),
+            format_field(total.num_words, config.words),
+            format_field(total.num_bytes, config.bytes),
+            format_field(total.num_chars, config.chars),
+        );
+    }
+
     Ok(())
 }
 
