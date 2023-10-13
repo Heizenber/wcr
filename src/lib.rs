@@ -31,45 +31,48 @@ pub fn get_args() -> MyResult<Config> {
         )
         .arg(
             Arg::with_name("lines")
-                .value_name("LINES")
-                .help("print the newline counts")
+                .help("Show line count")
                 .short("l")
                 .long("lines")
-                .takes_value(true)
-        )
-        .arg(
-            Arg::with_name("bytes")
-                .value_name("BYTES")
-                .help("print the byte counts")
-                .short("c")
-                .long("bytes")
-                .takes_value(true)
-                .conflicts_with("chars")
-        )
-        .arg(
-            Arg::with_name("chars")
-                .value_name("CHARS")
-                .help("print the character counts")
-                .short("m")
-                .long("chars")
                 .takes_value(false)
         )
         .arg(
+            Arg::with_name("bytes")
+                .help("Show byte count")
+                .short("c")
+                .long("bytes")
+                .takes_value(false)
+        )
+        .arg(
+            Arg::with_name("chars")
+                .help("Show character count")
+                .short("m")
+                .long("chars")
+                .takes_value(false)
+                .conflicts_with("bytes")
+        )
+        .arg(
             Arg::with_name("words")
-                .value_name("WORDS")
-                .help("print the word counts")
+                .help("Show word count")
                 .short("w")
                 .long("words")
-                .takes_value(true)
+                .takes_value(false)
         )
         .get_matches();
 
 
     let files = matches.values_of_lossy("files").unwrap();
-    let lines = matches.is_present("lines");
-    let words = matches.is_present("words");
-    let bytes = matches.is_present("bytes");
+    let mut lines = matches.is_present("lines");
+    let mut words = matches.is_present("words");
+    let mut bytes = matches.is_present("bytes");
     let chars = matches.is_present("chars");
+
+    if [lines, words, bytes, chars].iter().all(|v| *v == false) {
+        lines = true;
+        words = true;
+        bytes = true;
+    }
+
     Ok(Config {
         files,
         lines,
