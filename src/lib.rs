@@ -21,6 +21,12 @@ pub struct FileInfo {
     num_chars: usize,
 }
 
+impl Default for FileInfo {
+    fn default() -> Self {
+        Self { num_lines: 0, num_words: 0, num_bytes: 0, num_chars: 0 } 
+    }
+}
+
 pub fn count(mut file: impl BufRead) -> MyResult<FileInfo> {
     let mut num_lines = 0;
     let mut num_words = 0;
@@ -45,10 +51,23 @@ pub fn count(mut file: impl BufRead) -> MyResult<FileInfo> {
 }
 
 pub fn run(config: Config) -> MyResult<()> {
+    let number_of_files = &config.files.len();
+    let last_filename = &config.files[*number_of_files - 1];
     for filename in &config.files {
+        let mut total = FileInfo::default();
         match open(filename) {
             Err(err) => eprintln!("{}: {}", filename, err),
-            Ok(_) => println!("Opened {}", filename)
+            Ok(mut file) => {
+                if let Ok(info) = count(file) {
+                    println!(
+                        "{:>8}{:>8}{:>8} {}",
+                        info.num_lines,
+                        info.num_words,
+                        info.num_bytes,
+                        filename
+                    );
+                }
+            }
         }
     }
     Ok(())
@@ -127,8 +146,18 @@ fn open(filename: &str) -> MyResult<Box<dyn BufRead>> {
 }
 
 
+fn format_field(value: usize, show: bool) -> String {
+    if show {
+        format!("{:>8}", value)
+    } else {
+        "".to_string()
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::format_field;
+
     use super::{count, FileInfo};
     use std::io::Cursor;
 
@@ -145,4 +174,12 @@ mod tests {
         };
         assert_eq!(info.unwrap(), expected);
     }
+
+    #[test]
+    fn test_format_field() {
+        assert_eq!(format_field(1, false), "");
+        assert_eq!(format_field(3, true), "       3");
+        assert_eq!(format_field(10, true), "      10");
+    }
 }
+
